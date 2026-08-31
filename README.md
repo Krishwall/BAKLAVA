@@ -1,2 +1,2 @@
 # BAKLAVA
-A third AI for AI agent monitoring and governance
+A third EYE for AI agent monitoring and governance
