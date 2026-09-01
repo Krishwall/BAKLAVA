@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: BAKLAVA-postgres
+    environment:
+      POSTGRES_USER: BAKLAVA
+      POSTGRES_PASSWORD: BAKLAVA
+      POSTGRES_DB: BAKLAVA
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U BAKLAVA -d BAKLAVA"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:8
+    container_name: BAKLAVA-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: BAKLAVA-api
+    environment:
+      ENVIRONMENT: dev
+      DATABASE_URL: postgresql+psycopg://BAKLAVA:BAKLAVA@postgres:5432/BAKLAVA
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  prometheus:
+      image: prom/prometheus:latest
+      container_name: baklava-prometheus
+      volumes:
+        - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      ports:
+        - "9090:9090"
+      depends_on:
+        - api
+  grafana:
+    image: grafana/grafana-oss:11.5.0
+    container_name: BAKLAVA-grafana
+    platform: linux/amd64
+    user: "0"
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
