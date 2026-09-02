@@ -1,0 +1,48 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.agents.schemas import AgentCreate, AgentResponse
+from app.db.database import get_db
+from app.db.model import Agent
+
+router=APIRouter(
+    prefix="/agents",
+    tags=["Agents"],
+)
+
+@router.post("",response_model=AgentResponse,status_code=status.HTTP_201_CREATED,)
+def register_agent(
+    agent:AgentCreate,
+    db: Session= Depends(get_db),
+)->Agent:
+    existing_agent=db.get(Agent, agent.agent_id)
+
+    if existing_agent:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Agent already registered",
+        )
+    db_agent=Agent(**agent.model_dump())
+
+    db.add(db_agent)
+    db.commit()
+    db.refresh(db_agent)
+
+    return db_agent
+
+@router.get("",response_model=list[AgentResponse])
+def list_agents(db:Session=Depends(get_db)):
+    agents=db.query(Agent).all()
+    return agents
+
+@router.get("/{agent_id}",response_model=AgentResponse)
+def get_agent(agent_id:str,db:Session=Depends(get_db),):
+    agent =db.get(Agent,agent_id)
+
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+    return agent
+    
