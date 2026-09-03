@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.database import Base
@@ -8,6 +8,21 @@ from app.db.database import Base
 
 class Agent(Base):
     __tablename__ = "agents"
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active', 'suspended', 'deregistered')",
+            name="ck_agents_status",
+        ),
+        CheckConstraint(
+            "environment IN ('dev', 'test', 'qa', 'ppd', 'prod')",
+            name="ck_agents_environment",
+        ),
+        CheckConstraint(
+            "risk_level IN ('low', 'medium', 'high', 'critical')",
+            name="ck_agents_risk_level",
+        ),
+    )
 
     agent_id: Mapped[str] = mapped_column(String(100), primary_key=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
