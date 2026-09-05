@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.agents.router import router as agent_router
+from app.capabilities.router import router as capability_router
 
 app = FastAPI(
     title="BAKLAVA",
@@ -11,7 +12,7 @@ app = FastAPI(
 Instrumentator().instrument(app).expose(app)
 
 app.include_router(agent_router)
-
+app.include_router(capability_router)
 
 @app.get("/")
 async def root():
