@@ -9,6 +9,7 @@ from app.db.database import Base
 
 __all__ = ["Agent", "AgentCapability", "Capability"]
 
+
 class Agent(Base):
     __tablename__ = "agents"
 

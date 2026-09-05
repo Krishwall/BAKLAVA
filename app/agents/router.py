@@ -12,7 +12,10 @@ router = APIRouter(
     tags=["Agents"],
 )
 
-@router.post("/{agent_id}/capabilities/{capability_id}", status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/{agent_id}/capabilities/{capability_id}", status_code=status.HTTP_201_CREATED
+)
 def assign_capability(
     agent_id: str,
     capability_id: str,
@@ -85,7 +88,9 @@ def list_agent_capabilities(
     return capabilities
 
 
-@router.delete("/{agent_id}/capabilities/{capability_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{agent_id}/capabilities/{capability_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def remove_capability(
     agent_id: str,
     capability_id: str,
@@ -104,7 +109,8 @@ def remove_capability(
 
     db.delete(assignment)
     db.commit()
-    
+
+
 @router.post(
     "",
     response_model=AgentResponse,
@@ -221,4 +227,3 @@ def deregister_agent(
     db.refresh(agent)
 
     return agent
-

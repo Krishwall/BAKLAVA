@@ -14,6 +14,7 @@ Instrumentator().instrument(app).expose(app)
 app.include_router(agent_router)
 app.include_router(capability_router)
 
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to BAKLAVA API"}

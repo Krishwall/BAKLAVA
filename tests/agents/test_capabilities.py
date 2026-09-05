@@ -31,9 +31,7 @@ def test_assign_capability(client):
     create_agent(client)
     create_capability(client)
 
-    response = client.post(
-        "/agents/test-agent/capabilities/test-capability"
-    )
+    response = client.post("/agents/test-agent/capabilities/test-capability")
 
     assert response.status_code == 201
     assert response.json() == {
@@ -58,9 +56,7 @@ def test_duplicate_capability_assignment(client):
 def test_assign_capability_to_nonexistent_agent(client):
     create_capability(client)
 
-    response = client.post(
-        "/agents/does-not-exist/capabilities/test-capability"
-    )
+    response = client.post("/agents/does-not-exist/capabilities/test-capability")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Agent not found"
@@ -69,9 +65,7 @@ def test_assign_capability_to_nonexistent_agent(client):
 def test_assign_nonexistent_capability(client):
     create_agent(client)
 
-    response = client.post(
-        "/agents/test-agent/capabilities/does-not-exist"
-    )
+    response = client.post("/agents/test-agent/capabilities/does-not-exist")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Capability not found"
@@ -81,9 +75,7 @@ def test_list_agent_capabilities(client):
     create_agent(client)
     create_capability(client)
 
-    client.post(
-        "/agents/test-agent/capabilities/test-capability"
-    )
+    client.post("/agents/test-agent/capabilities/test-capability")
 
     response = client.get("/agents/test-agent/capabilities")
 
@@ -96,9 +88,7 @@ def test_list_agent_capabilities(client):
 
 
 def test_list_capabilities_for_nonexistent_agent(client):
-    response = client.get(
-        "/agents/does-not-exist/capabilities"
-    )
+    response = client.get("/agents/does-not-exist/capabilities")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Agent not found"
@@ -126,9 +116,7 @@ def test_remove_unassigned_capability(client):
     create_agent(client)
     create_capability(client)
 
-    response = client.delete(
-        "/agents/test-agent/capabilities/test-capability"
-    )
+    response = client.delete("/agents/test-agent/capabilities/test-capability")
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Capability assignment not found"
