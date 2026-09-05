@@ -3,8 +3,11 @@ from datetime import datetime
 from sqlalchemy import CheckConstraint, DateTime, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.capabilities.model import Capability
+from app.db.agent_capability import AgentCapability
 from app.db.database import Base
 
+__all__ = ["Agent", "AgentCapability", "Capability"]
 
 class Agent(Base):
     __tablename__ = "agents"
