@@ -10,10 +10,9 @@ class CapabilityCreate(BaseModel):
     name: str
     description: str | None = None
     version: str
-    risk_level: RiskLevel=RiskLevel.MEDIUM
+    risk_level: RiskLevel = RiskLevel.MEDIUM
+
 
 class CapabilityResponse(CapabilityCreate):
     created_at: datetime
     updated_at: datetime
-
-    
