@@ -37,3 +37,6 @@ jobs:
 
       - name: Tests
         run: uv run pytest
+        env:
+            DATABASE_URL: postgresql+psycopg://BAKLAVA:BAKLAVA@localhost:5432/BAKLAVA
+            REDIS_URL: redis://localhost:6379/0
