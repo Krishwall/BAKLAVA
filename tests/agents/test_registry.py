@@ -69,3 +69,40 @@ def test_invalid_agent(client):
     response = client.post("/agents", json=payload)
 
     assert response.status_code == 422
+
+
+def test_suspend_agent(client):
+    client.post("/agents", json=agent_payload())
+
+    response = client.post("/agents/research-agent/suspend")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "suspended"
+
+
+def test_reactivate_agent(client):
+    client.post("/agents", json=agent_payload())
+    client.post("/agents/research-agent/suspend")
+
+    response = client.post("/agents/research-agent/reactivate")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "active"
+
+
+def test_deregister_agent(client):
+    client.post("/agents", json=agent_payload())
+
+    response = client.post("/agents/research-agent/deregister")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "deregistered"
+
+
+def test_cannot_suspend_deregistered_agent(client):
+    client.post("/agents", json=agent_payload())
+    client.post("/agents/research-agent/deregister")
+
+    response = client.post("/agents/research-agent/suspend")
+
+    assert response.status_code == 409
