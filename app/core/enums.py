@@ -14,6 +14,15 @@ class AgentStatus(str, Enum):
     DEREGISTERED = "deregistered"
 
 
+from enum import Enum
+
+
+class ToolStatus(str, Enum):
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+    DEREGISTERED = "deregistered"
+
+
 class Environment(str, Enum):
     DEV = "dev"
     TEST = "test"
