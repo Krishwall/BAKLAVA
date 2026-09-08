@@ -5,7 +5,9 @@ from app.agents.model import Agent
 from app.agents.schemas import AgentCreate, AgentResponse
 from app.capabilities.model import Capability
 from app.db.agent_capability import AgentCapability
+from app.db.agent_tool import AgentTool
 from app.db.database import get_db
+from app.tools.model import Tool
 
 router = APIRouter(
     prefix="/agents",
@@ -227,3 +229,113 @@ def deregister_agent(
     db.refresh(agent)
 
     return agent
+
+
+@router.post(
+    "/{agent_id}/tools/{tool_id}",
+    status_code=status.HTTP_201_CREATED,
+)
+def assign_tool(
+    agent_id: str,
+    tool_id: str,
+    db: Session = Depends(get_db),
+):
+    agent = db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+
+    tool = db.get(Tool, tool_id)
+    if not tool:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool not found",
+        )
+
+    existing = db.get(
+        AgentTool,
+        {
+            "agent_id": agent_id,
+            "tool_id": tool_id,
+        },
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Tool already assigned to agent",
+        )
+
+    association = AgentTool(
+        agent_id=agent_id,
+        tool_id=tool_id,
+    )
+
+    db.add(association)
+    db.commit()
+
+    return {
+        "agent_id": agent_id,
+        "tool_id": tool_id,
+    }
+
+
+@router.delete(
+    "/{agent_id}/tools/{tool_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def remove_tool(
+    agent_id: str,
+    tool_id: str,
+    db: Session = Depends(get_db),
+):
+    agent = db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+
+    association = db.get(
+        AgentTool,
+        {
+            "agent_id": agent_id,
+            "tool_id": tool_id,
+        },
+    )
+
+    if not association:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool association not found",
+        )
+
+    db.delete(association)
+    db.commit()
+
+
+@router.get("/{agent_id}/tools")
+def list_agent_tools(
+    agent_id: str,
+    db: Session = Depends(get_db),
+):
+    agent = db.get(Agent, agent_id)
+    if not agent:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Agent not found",
+        )
+
+    tools = (
+        db.query(Tool)
+        .join(
+            AgentTool,
+            AgentTool.tool_id == Tool.tool_id,
+        )
+        .filter(AgentTool.agent_id == agent_id)
+        .all()
+    )
+
+    return tools
