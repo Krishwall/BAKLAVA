@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.capabilities.model import Capability
 from app.db.database import get_db
+from app.db.tool_capability import ToolCapability
 from app.tools.model import Tool
 from app.tools.schemas import ToolCreate, ToolResponse
 
@@ -120,3 +122,101 @@ def deregister_tool(
     db.refresh(tool)
 
     return tool
+
+
+@router.post(
+    "/{tool_id}/capabilities/{capability_id}", status_code=status.HTTP_201_CREATED
+)
+def assign_capability(
+    tool_id: str,
+    capability_id: str,
+    db: Session = Depends(get_db),
+):
+    tool = db.get(Tool, tool_id)
+
+    if not tool:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool not found",
+        )
+
+    capability = db.get(Capability, capability_id)
+
+    if not capability:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Capability not found",
+        )
+
+    existing = db.get(
+        ToolCapability,
+        (tool_id, capability_id),
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Capability already assigned to agent",
+        )
+
+    assignment = ToolCapability(
+        tool_id=tool_id,
+        capability_id=capability_id,
+    )
+
+    db.add(assignment)
+    db.commit()
+
+    return {
+        "tool_id": tool_id,
+        "capability_id": capability_id,
+    }
+
+
+@router.get("/{tool_id}/capabilities")
+def list_tool_capabilities(
+    tool_id: str,
+    db: Session = Depends(get_db),
+):
+    tool = db.get(Tool, tool_id)
+
+    if not tool:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tool not found",
+        )
+
+    capabilities = (
+        db.query(Capability)
+        .join(
+            ToolCapability,
+            ToolCapability.capability_id == Capability.capability_id,
+        )
+        .filter(ToolCapability.tool_id == tool_id)
+        .all()
+    )
+
+    return capabilities
+
+
+@router.delete(
+    "/{tool_id}/capabilities/{capability_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def remove_capability(
+    tool_id: str,
+    capability_id: str,
+    db: Session = Depends(get_db),
+):
+    assignment = db.get(
+        ToolCapability,
+        (tool_id, capability_id),
+    )
+
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Capability assignment not found",
+        )
+
+    db.delete(assignment)
+    db.commit()
