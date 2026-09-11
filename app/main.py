@@ -3,6 +3,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.agents.router import router as agent_router
 from app.capabilities.router import router as capability_router
+from app.governance.router import router as governance_router
 from app.tools.router import router as tool_router
 
 app = FastAPI(
@@ -15,6 +16,7 @@ Instrumentator().instrument(app).expose(app)
 app.include_router(agent_router)
 app.include_router(capability_router)
 app.include_router(tool_router)
+app.include_router(governance_router)
 
 
 @app.get("/")
