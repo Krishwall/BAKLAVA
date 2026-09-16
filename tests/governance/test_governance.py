@@ -68,16 +68,15 @@ def create_tool(
 
 def create_policy(
     client,
-    policy_id="dev-tool-execution",
     environment="dev",
     risk_level="medium",
     action="execute_tool",
     decision="ALLOW",
+    priority=0,
 ):
     response = client.post(
         "/governance/policies",
         json={
-            "policy_id": policy_id,
             "name": "Test Policy",
             "description": "Governance test policy",
             "environment": environment,
@@ -85,6 +84,7 @@ def create_policy(
             "action": action,
             "decision": decision,
             "enabled": True,
+            "priority": priority,
         },
     )
 
@@ -204,7 +204,6 @@ def test_high_risk_policy_requires_approval(client):
 
     create_policy(
         client,
-        policy_id="prod-high-risk-execution",
         environment="prod",
         risk_level="high",
         decision="REQUIRE_APPROVAL",
@@ -223,3 +222,130 @@ def test_high_risk_policy_requires_approval(client):
     assert body["agent_id"] == "agent-001"
     assert body["tool_id"] == "database-tool"
     assert body["action"] == "execute_tool"
+
+
+def test_higher_priority_policy_wins(client):
+    create_agent(client)
+    create_capability(client)
+    create_tool(client)
+
+    authorize_tool(client)
+
+    low_priority_policy = {
+        "name": "Low priority allow",
+        "description": "Lower priority policy",
+        "environment": "dev",
+        "risk_level": "low",
+        "action": "execute",
+        "decision": "ALLOW",
+        "enabled": True,
+        "priority": 10,
+    }
+
+    high_priority_policy = {
+        "name": "High priority deny",
+        "description": "Higher priority policy",
+        "environment": "dev",
+        "risk_level": "low",
+        "action": "execute",
+        "decision": "DENY",
+        "enabled": True,
+        "priority": 100,
+    }
+
+    response = client.post(
+        "/governance/policies",
+        json=low_priority_policy,
+    )
+    print("STATUS:", response.status_code)
+    print("BODY:", response.text)
+    assert response.status_code == 200
+
+    response = client.post(
+        "/governance/policies",
+        json=high_priority_policy,
+    )
+    assert response.status_code == 200
+
+    response = evaluate(
+        client,
+        agent_id="agent-001",
+        tool_id="database-tool",
+        action="execute",
+        environment="dev",
+    )
+
+    print("STATUS:", response.status_code)
+    print("BODY:", response.text)
+    assert response.json()["decision"] == "DENY"
+
+
+def test_same_priority_policy_uses_deterministic_tiebreaker(client):
+    first_policy = {
+        "name": "same-priority-policy-1",
+        "description": "First policy",
+        "environment": "prod",
+        "risk_level": "low",
+        "action": "read",
+        "decision": "ALLOW",
+        "enabled": True,
+        "priority": 50,
+    }
+
+    second_policy = {
+        "name": "same-priority-policy-2",
+        "description": "Second policy",
+        "environment": "prod",
+        "risk_level": "low",
+        "action": "read",
+        "decision": "DENY",
+        "enabled": True,
+        "priority": 50,
+    }
+
+    first_response = client.post(
+        "/governance/policies",
+        json=first_policy,
+    )
+    assert first_response.status_code == 200
+    first_policy_id = first_response.json()["policy_id"]
+
+    second_response = client.post(
+        "/governance/policies",
+        json=second_policy,
+    )
+    assert second_response.status_code == 200
+    second_policy_id = second_response.json()["policy_id"]
+
+    response = evaluate(client, environment="prod", action="read")
+
+    expected_decision = "ALLOW" if first_policy_id < second_policy_id else "DENY"
+
+    assert response.status_code == 200
+    print("First policy ID:", first_policy_id)
+    print("Second policy ID:", second_policy_id)
+    print(
+        "Expected by UUID order:",
+        "ALLOW" if first_policy_id < second_policy_id else "DENY",
+    )
+    print("Actual decision:", response.json()["decision"])
+    assert response.json()["decision"] == expected_decision
+
+
+def test_negative_policy_priority_is_rejected(client):
+    response = client.post(
+        "/governance/policies",
+        json={
+            "policy_id": "negative-priority-policy",
+            "name": "Invalid priority policy",
+            "description": "Priority cannot be negative",
+            "environment": "dev",
+            "risk_level": "low",
+            "action": "execute_tool",
+            "decision": "ALLOW",
+            "enabled": True,
+            "priority": -1,
+        },
+    )
+
+    assert response.status_code == 422

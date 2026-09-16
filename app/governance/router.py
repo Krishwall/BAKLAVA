@@ -62,15 +62,10 @@ def create_policy(
     policy: PolicyCreate,
     db: Session = Depends(get_db),
 ):
-    existing = db.get(Policy, policy.policy_id)
-
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Policy already exists",
-        )
-
-    db_policy = Policy(**policy.model_dump())
+    db_policy = Policy(
+        policy_id=str(uuid.uuid4()),
+        **policy.model_dump(),
+    )
 
     db.add(db_policy)
     db.commit()

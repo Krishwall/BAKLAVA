@@ -1,7 +1,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class GovernanceRequest(BaseModel):
@@ -23,7 +23,6 @@ class PolicyDecision(str, Enum):
 
 
 class PolicyCreate(BaseModel):
-    policy_id: str
     name: str
     description: str | None = None
     environment: str
@@ -31,9 +30,12 @@ class PolicyCreate(BaseModel):
     action: str
     decision: str
     enabled: bool = True
+    priority: int = Field(default=0, ge=0)
 
 
 class PolicyResponse(PolicyCreate):
+    priority: int = 0
+    policy_id: str
     created_at: datetime
     updated_at: datetime
 

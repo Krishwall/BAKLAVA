@@ -95,16 +95,29 @@ class GovernanceEngine:
                     reason="Agent is not authorized to use this tool",
                 )
 
-        policy = (
+        policies = (
             self.db.query(Policy)
             .filter(
                 Policy.enabled.is_(True),
                 Policy.environment == request.environment,
                 Policy.action == request.action,
             )
-            .first()
+            .order_by(
+                Policy.priority.desc(),
+                Policy.risk_level.desc(),
+                Policy.policy_id.asc(),
+            )
+            .all()
         )
 
+        print(
+            [
+                (p.policy_id, p.priority, p.risk_level, p.action, p.decision)
+                for p in policies
+            ]
+        )
+
+        policy = policies[0] if policies else None
         if policy is None:
             return GovernanceDecision(
                 decision="DENY",
