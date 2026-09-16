@@ -281,7 +281,13 @@ def test_higher_priority_policy_wins(client):
 
 
 def test_same_priority_policy_uses_deterministic_tiebreaker(client):
+    create_agent(client, environment="prod")
+    create_capability(client)
+    create_tool(client, environment="prod")
+    authorize_tool(client)
+
     first_policy = {
+        "policy_id": "a-policy-1",
         "name": "same-priority-policy-1",
         "description": "First policy",
         "environment": "prod",
@@ -293,6 +299,7 @@ def test_same_priority_policy_uses_deterministic_tiebreaker(client):
     }
 
     second_policy = {
+        "policy_id": "a-policy-2",
         "name": "same-priority-policy-2",
         "description": "Second policy",
         "environment": "prod",
@@ -317,18 +324,18 @@ def test_same_priority_policy_uses_deterministic_tiebreaker(client):
     assert second_response.status_code == 200
     second_policy_id = second_response.json()["policy_id"]
 
-    response = evaluate(client, environment="prod", action="read")
+    response = evaluate(client, environment="prod", action="read",)
 
     expected_decision = "ALLOW" if first_policy_id < second_policy_id else "DENY"
 
     assert response.status_code == 200
-    print("First policy ID:", first_policy_id)
-    print("Second policy ID:", second_policy_id)
-    print(
-        "Expected by UUID order:",
-        "ALLOW" if first_policy_id < second_policy_id else "DENY",
-    )
-    print("Actual decision:", response.json()["decision"])
+    # print("First policy ID:", first_policy_id)
+    # print("Second policy ID:", second_policy_id)
+    # print(
+    #     "Expected by UUID order:",
+    #     "ALLOW" if first_policy_id < second_policy_id else "DENY",
+    # )
+    # print("Actual decision:", response.json()["decision"])
     assert response.json()["decision"] == expected_decision
 
 

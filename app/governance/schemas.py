@@ -23,6 +23,7 @@ class PolicyDecision(str, Enum):
 
 
 class PolicyCreate(BaseModel):
+    policy_id: str | None = None
     name: str
     description: str | None = None
     environment: str
@@ -34,8 +35,8 @@ class PolicyCreate(BaseModel):
 
 
 class PolicyResponse(PolicyCreate):
+    policy_id: str | None = None
     priority: int = 0
-    policy_id: str
     created_at: datetime
     updated_at: datetime
 
