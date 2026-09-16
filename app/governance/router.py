@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
+from app import db
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -62,15 +63,12 @@ def create_policy(
     policy: PolicyCreate,
     db: Session = Depends(get_db),
 ):
-    existing = db.get(Policy, policy.policy_id)
+    policy_data = policy.model_dump()
 
-    if existing:
-        raise HTTPException(
-            status_code=409,
-            detail="Policy already exists",
-        )
+    if not policy_data.get("policy_id"):
+        policy_data["policy_id"] = str(uuid.uuid4())
 
-    db_policy = Policy(**policy.model_dump())
+    db_policy = Policy(**policy_data)
 
     db.add(db_policy)
     db.commit()
