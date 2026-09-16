@@ -1,7 +1,6 @@
 import uuid
 from datetime import UTC, datetime
 
-from app import db
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 

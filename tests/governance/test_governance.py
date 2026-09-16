@@ -324,7 +324,11 @@ def test_same_priority_policy_uses_deterministic_tiebreaker(client):
     assert second_response.status_code == 200
     second_policy_id = second_response.json()["policy_id"]
 
-    response = evaluate(client, environment="prod", action="read",)
+    response = evaluate(
+        client,
+        environment="prod",
+        action="read",
+    )
 
     expected_decision = "ALLOW" if first_policy_id < second_policy_id else "DENY"
 
