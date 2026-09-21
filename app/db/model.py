@@ -4,6 +4,7 @@ from app.db.agent_capability import AgentCapability
 from app.db.agent_tool import AgentTool
 from app.db.tool_capability import ToolCapability
 from app.governance.approval import ApprovalRequest
+from app.governance.audit import PolicyAuditLog
 from app.governance.model import Policy
 from app.tools.model import Tool
 
@@ -14,6 +15,7 @@ __all__ = [
     "ApprovalRequest",
     "Capability",
     "Policy",
+    "PolicyAuditLog",
     "Tool",
     "ToolCapability",
 ]

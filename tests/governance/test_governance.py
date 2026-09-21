@@ -1,3 +1,6 @@
+from app.governance.audit import PolicyAuditLog
+
+
 def create_agent(
     client,
     agent_id="agent-001",
@@ -360,3 +363,22 @@ def test_negative_policy_priority_is_rejected(client):
     )
 
     assert response.status_code == 422
+
+
+def test_governance_decision_creates_audit_log(client, db):
+    response = evaluate(
+        client,
+        environment="dev",
+        action="execute_tool",
+    )
+
+    assert response.status_code == 200
+
+    audit_log = db.query(PolicyAuditLog).order_by(PolicyAuditLog.id.desc()).first()
+
+    assert audit_log is not None
+    assert audit_log.agent_id == "agent-001"
+    assert audit_log.tool_id == "database-tool"
+    assert audit_log.action == "execute_tool"
+    assert audit_log.environment == "dev"
+    assert audit_log.decision == response.json()["decision"]
